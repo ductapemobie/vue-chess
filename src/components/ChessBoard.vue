@@ -178,7 +178,6 @@
                         break;
                     case 'q':
                         console.log('q');
-
                         for (let i = -1; i < 2; i++){
                             for (let j = -1; j < 2; j++){
                                 if (i === 0 && j === 0) continue;
@@ -197,10 +196,27 @@
                                 }
                             }
                         }
-
                         break;
                     case 'b':
                         console.log('b');
+                        for (let i = -1; i < 2; i+=2){
+                            for (let j = -1; j < 2; j+=2){
+                                if (i === 0 && j === 0) continue;
+                                for (let k = 1; k < 8; k++){
+                                    const destX = X + j * k;
+                                    const destY = Y + i * k;
+                                    if (destX > 7 || destX < 0 || destY > 7 || destY < 0)break;
+                                    const destPiece = this.getSquarePiece(destX, destY);
+                                    if (destPiece){
+                                        if (destPiece[0] != this.turn[0]){
+                                            moveList.push({x:destX, y:destY});
+                                        }
+                                        break;
+                                    }
+                                    moveList.push({x:destX, y:destY});
+                                }
+                            }
+                        }
                         break;
                     case 'n':
                         console.log('n');
@@ -276,11 +292,11 @@
                     return 'wq'
                 }else if(checkType('black', 'q', this.pieces)){
                     return 'bq'
-                }/*else if(checkType('white', 'b', this.pieces)){
+                }else if(checkType('white', 'b', this.pieces)){
                     return 'wb'
                 }else if(checkType('black', 'b', this.pieces)){
                     return 'bb'
-                }else if(checkType('white', 'n', this.pieces)){
+                }/*else if(checkType('white', 'n', this.pieces)){
                     return 'wn'
                 }else if(checkType('black', 'n', this.pieces)){
                     return 'bn'
