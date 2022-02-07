@@ -167,13 +167,37 @@
                                 if (i === 0 && j === 0)continue;
                                 if (j + X < 0)continue;
                                 if (j + X > 7)break;
+                                const destPiece = this.getSquarePiece(X + j, Y + i);
+                                if (destPiece){
+                                    if (destPiece[0] === this.turn[0])continue;
+                                }
                                 moveList.push({x: X + j, y: Y + i});
                             }
-                            this.legalMoves = moveList;
+                            
                         }
                         break;
                     case 'q':
                         console.log('q');
+
+                        for (let i = -1; i < 2; i++){
+                            for (let j = -1; j < 2; j++){
+                                if (i === 0 && j === 0) continue;
+                                for (let k = 1; k < 8; k++){
+                                    const destX = X + j * k;
+                                    const destY = Y + i * k;
+                                    if (destX > 7 || destX < 0 || destY > 7 || destY < 0)break;
+                                    const destPiece = this.getSquarePiece(destX, destY);
+                                    if (destPiece){
+                                        if (destPiece[0] != this.turn[0]){
+                                            moveList.push({x:destX, y:destY});
+                                        }
+                                        break;
+                                    }
+                                    moveList.push({x:destX, y:destY});
+                                }
+                            }
+                        }
+
                         break;
                     case 'b':
                         console.log('b');
@@ -188,20 +212,35 @@
                         console.log('p');
                         break;
                 }
-                return moveList;
+                console.log(moveList);
+                this.legalMoves = moveList;
             },
             movePiece(){
                 //1 capture if necessairy
                 const newX = this.selected.x;
                 const newY = this.selected.y;
+                const turn = this.turn;
+                const oppTurn = (turn === "white") ? "black" : "white";
                 const capturedPiece = this.getSquarePiece(newX, newY, this.pieces);
+                //a piece was captured
                 if (capturedPiece){
-                    console.log(capturedPiece[0]);
+                    const capPieceArr = this.pieces[oppTurn][capturedPiece[1]];
+                    let capIndex = -1;
+                    for (let i = 0; i < capPieceArr.length; i ++){
+                        if (capPieceArr[i].x === newX &&
+                            capPieceArr[i].y === newY){
+                            capIndex = i;
+                            break;
+                        }
+                    }
+                    if (capIndex === -1) console.log("oh no");
+                    this.pieces[oppTurn][capturedPiece[1]].splice(capIndex, 1);
+                    console.log(this.pieces);
                 }
+
                 //2 move the piece
                 //2a identify piece
                 const pieceType = this.selectedPiece.piece[1];
-                const turn = this.turn;
                 const pieceArr = this.pieces[turn][pieceType]
                 let index = -1;
                 for (let i = 0; i < pieceArr.length; i ++){
@@ -216,8 +255,9 @@
                 //2c update piece in pieces list
                 pieceArr[index].x = this.selected.x;
                 pieceArr[index].y = this.selected.y;
+
                 //3 update turn
-                this.turn = (turn === "white") ? "black" : "white";
+                this.turn = oppTurn;
             },
             getSquarePiece(x, y){
                 function checkType(color, piece, pieces){
@@ -232,11 +272,11 @@
                     return 'wk';
                 }else if(checkType('black', 'k', this.pieces)){
                     return 'bk';
-                }/*else if(checkType('white', 'q', this.pieces)){
+                }else if(checkType('white', 'q', this.pieces)){
                     return 'wq'
                 }else if(checkType('black', 'q', this.pieces)){
                     return 'bq'
-                }else if(checkType('white', 'b', this.pieces)){
+                }/*else if(checkType('white', 'b', this.pieces)){
                     return 'wb'
                 }else if(checkType('black', 'b', this.pieces)){
                     return 'bb'
