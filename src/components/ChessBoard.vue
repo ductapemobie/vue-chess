@@ -96,53 +96,13 @@
         computed:{
             initialBoard(){
 
-                //this function isn't great but oh well
-                function getSquarePiece(x, y, pieces){
-
-                    function checkType(color, piece){
-                        for (let i = 0; i < pieces[color][piece].length; i++)
-                            if (pieces[color][piece][i].x === x && pieces[color][piece][i].y === y){
-                                return true;
-                            }
-                        return false;
-                    }
-
-                    if (checkType('white', 'k')){
-                        return 'wk';
-                    }else if(checkType('black', 'k')){
-                        return 'bk';
-                    }/*else if(checkType('white', 'q')){
-                        return 'wq'
-                    }else if(checkType('black', 'q')){
-                        return 'bq'
-                    }else if(checkType('white', 'b')){
-                        return 'wb'
-                    }else if(checkType('black', 'b')){
-                        return 'bb'
-                    }else if(checkType('white', 'k')){
-                        return 'wn'
-                    }else if(checkType('black', 'k')){
-                        return 'bn'
-                    }else if(checkType('white', 'r')){
-                        return 'wr'
-                    }else if(checkType('black', 'r')){
-                        return 'br'
-                    }else if(checkType('white', 'p')){
-                        return 'wp'
-                    }else if(checkType('black', 'p')){
-                        return 'bp'
-                    }*/else{
-                        return ''
-                    }
-                }
-
                 const squares = [];
                 for (let i = 0 ; i < 8; i ++){
                     squares.push({row:i, cells:[]});
                     for (let j = 0; j < 8; j++){
                         const squareColor = (this.selected.x === j && this.selected.y === i)?
                             "red" : ((i+j) % 2 === 1)? 'blue' : 'white'
-                        const squarePiece = getSquarePiece(j, i);
+                        const squarePiece = this.getSquarePiece(j, i, this.pieces);
                         squares[i].cells.push({y: i, x: j, color: squareColor, piece: squarePiece})
                     }
                 }
@@ -153,7 +113,6 @@
             squareClicked(coords){
                 this.selected.x = coords.x;
                 this.selected.y = coords.y;
-                console.log(coords.x, coords.y)
                 const selectedPiece = coords.piece;
                 this.processClick(selectedPiece);
             },
@@ -167,7 +126,6 @@
                     this.selectedPiece.x = -1;
                     this.selectedPiece.y = -1;
                     this.selectedPiece.piece = "";
-                    console.log(this.legalMoves);
                 }else{
                     //unsleceted state
                     if (selectedPiece != ""){
@@ -221,7 +179,7 @@
                         console.log('b');
                         break;
                     case 'n':
-                        console.log('k');
+                        console.log('n');
                         break;
                     case 'r':
                         console.log('r');
@@ -230,15 +188,16 @@
                         console.log('p');
                         break;
                 }
-                console.log(X, Y)
-                console.log(moveList);
                 return moveList;
             },
             movePiece(){
                 //1 capture if necessairy
                 const newX = this.selected.x;
                 const newY = this.selected.y;
-
+                const capturedPiece = this.getSquarePiece(newX, newY, this.pieces);
+                if (capturedPiece){
+                    console.log(capturedPiece[0]);
+                }
                 //2 move the piece
                 //2a identify piece
                 const pieceType = this.selectedPiece.piece[1];
@@ -260,12 +219,42 @@
                 //3 update turn
                 this.turn = (turn === "white") ? "black" : "white";
             },
-            checkType(color, piece){
-                for (let i = 0; i < pieces[color][piece].length; i++)
-                    if (this.pieces[color][piece][i].x === x && this.pieces[color][piece][i].y === y){
-                        return true;
-                    }
-                return false;
+            getSquarePiece(x, y){
+                function checkType(color, piece, pieces){
+                    for (let i = 0; i < pieces[color][piece].length; i++)
+                        if (pieces[color][piece][i].x === x && pieces[color][piece][i].y === y){
+                            return true;
+                        }
+                    return false;
+                }
+
+                if (checkType('white', 'k', this.pieces)){
+                    return 'wk';
+                }else if(checkType('black', 'k', this.pieces)){
+                    return 'bk';
+                }/*else if(checkType('white', 'q', this.pieces)){
+                    return 'wq'
+                }else if(checkType('black', 'q', this.pieces)){
+                    return 'bq'
+                }else if(checkType('white', 'b', this.pieces)){
+                    return 'wb'
+                }else if(checkType('black', 'b', this.pieces)){
+                    return 'bb'
+                }else if(checkType('white', 'n', this.pieces)){
+                    return 'wn'
+                }else if(checkType('black', 'n', this.pieces)){
+                    return 'bn'
+                }else if(checkType('white', 'r', this.pieces)){
+                    return 'wr'
+                }else if(checkType('black', 'r', this.pieces)){
+                    return 'br'
+                }else if(checkType('white', 'p', this.pieces)){
+                    return 'wp'
+                }else if(checkType('black', 'p', this.pieces)){
+                    return 'bp'
+                }*/else{
+                    return ''
+                }
             }
         }
     }
