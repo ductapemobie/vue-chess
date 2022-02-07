@@ -151,7 +151,7 @@
                 //this is probably the biggest function
                 //only to be called in the selected state
                 if (this.selectedPiece.piece === "")return;
-                
+                const knightArr = [{x: -2, y:-1},{x: -2, y: 1},{x: -1, y:-2},{x: -1, y: 2},{x:  1, y:-2},{x:  1, y: 2},{x:  2, y:-1},{x:  2, y: 1}];
                 const X = this.selectedPiece.x;
                 const Y = this.selectedPiece.y;
 
@@ -220,9 +220,40 @@
                         break;
                     case 'n':
                         console.log('n');
+                        
+                        for (let i = 0; i < 8; i++){
+                            const destX = X + knightArr[i].x;
+                            const destY = Y + knightArr[i].y;
+                            if (destX > 7 || destX < 0 || destY > 7 || destY < 0)continue;
+                            const destPiece = this.getSquarePiece(destX, destY);
+                            if (destPiece){
+                                if (destPiece[0] === this.turn[0])
+                                    continue;
+                            }
+                            moveList.push({x:destX, y:destY});
+                        }
                         break;
                     case 'r':
                         console.log('r');
+                        for (let i = -1; i < 2; i++){
+                            for (let j = -1; j < 2; j++){
+                                if (i === 0 && j === 0) continue;
+                                if (i != 0 && j != 0) continue;
+                                for (let k = 1; k < 8; k++){
+                                    const destX = X + j * k;
+                                    const destY = Y + i * k;
+                                    if (destX > 7 || destX < 0 || destY > 7 || destY < 0)break;
+                                    const destPiece = this.getSquarePiece(destX, destY);
+                                    if (destPiece){
+                                        if (destPiece[0] != this.turn[0]){
+                                            moveList.push({x:destX, y:destY});
+                                        }
+                                        break;
+                                    }
+                                    moveList.push({x:destX, y:destY});
+                                }
+                            }
+                        }
                         break;
                     case 'p':
                         console.log('p');
@@ -296,7 +327,7 @@
                     return 'wb'
                 }else if(checkType('black', 'b', this.pieces)){
                     return 'bb'
-                }/*else if(checkType('white', 'n', this.pieces)){
+                }else if(checkType('white', 'n', this.pieces)){
                     return 'wn'
                 }else if(checkType('black', 'n', this.pieces)){
                     return 'bn'
@@ -304,7 +335,7 @@
                     return 'wr'
                 }else if(checkType('black', 'r', this.pieces)){
                     return 'br'
-                }else if(checkType('white', 'p', this.pieces)){
+                }/*else if(checkType('white', 'p', this.pieces)){
                     return 'wp'
                 }else if(checkType('black', 'p', this.pieces)){
                     return 'bp'
