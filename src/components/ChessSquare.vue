@@ -1,5 +1,5 @@
 <template>
-    <div v-bind:class="color" v-bind:style="gridStyle" class="square"  v-on:click="squareClicked">
+    <div v-bind:class="[color, borderStyle]" class="square"  v-on:click="squareClicked">
         <div v-if:="piece">
             <img v-bind:src="require(`@/assets/${piece}.png`)" class="img-format"/>
         </div>
@@ -18,6 +18,13 @@ export default {
         y: Number,
         color: String,
         piece: String,
+        border: Boolean,
+    },
+    computed:{
+        borderStyle(){
+            if(this.border)console.log()
+            return (this.border?"border":"no-border");
+        }
     },
     data(){
         return {
@@ -61,6 +68,14 @@ export default {
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
+}
+
+.border{
+    box-shadow: 0em 0em 1em red inset;
+}
+
+.no-border{
+    text-align: center;
 }
 
 </style>

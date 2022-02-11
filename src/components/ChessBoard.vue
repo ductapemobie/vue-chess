@@ -2,7 +2,7 @@
     <div class="chess-grid">
         <div v-for="row in initialBoard" :key="row" class="chess-row">
             <div v-for="square in row.cells" :key="square" class="chess-square">
-                <ChessSquare :x="square.x" :y="square.y" :color="square.color" :piece="square.piece" @squareclicked="squareClicked"/>
+                <ChessSquare :x="square.x" :y="square.y" :color="square.color" :piece="square.piece" :border="square.border" @squareclicked="squareClicked"/>
             </div>
         </div>
     </div>
@@ -21,7 +21,7 @@
                 pieces:{
                     "white":{
                         "k":[
-                            {x:4, y:7}
+                            {x:4, y:7, canCastle:"true"}
                         ],
                         "q":[
                             {x:3, y:7}
@@ -35,8 +35,8 @@
                             {x:6, y:7}
                         ],
                         "r":[
-                            {x:0, y:7},
-                            {x:7, y:7}
+                            {x:0, y:7, canCastle:"true"},
+                            {x:7, y:7, canCastle:"true"},
                         ],
                         "p":[
                             {x:0, y:6},
@@ -51,7 +51,7 @@
                     },
                     "black":{
                         "k":[
-                            {x:4, y:0}
+                            {x:4, y:0, canCastle:"true"}
                         ],
                         "q":[
                             {x:3, y:0}
@@ -65,8 +65,8 @@
                             {x:6, y:0}
                         ],
                         "r":[
-                            {x:0, y:0},
-                            {x:7, y:0}
+                            {x:0, y:0, canCastle:"true"},
+                            {x:7, y:0, canCastle:"true"}
                         ],
                         "p":[
                             {x:0, y:1},
@@ -102,10 +102,14 @@
                     for (let j = 0; j < 8; j++){
                         const squareColor = (this.selectedPiece.x === j && this.selectedPiece.y === i)?
                             "red" : ((i+j) % 2 === 1)? 'blue' : 'white'
+                        
                         const squarePiece = this.getSquarePiece(j, i, this.pieces);
-                        squares[i].cells.push({y: i, x: j, color: squareColor, piece: squarePiece})
+                        squares[i].cells.push({y: i, x: j, color: squareColor, piece: squarePiece, border: false})
                     }
                 }
+                this.legalMoves.forEach(move=>{
+                    squares[move.y].cells[move.x].border = true;
+                })
                 return squares;
             }
         },
@@ -117,7 +121,6 @@
                 this.processClick(selectedPiece);
             },
             processClick(selectedPiece){
-                console.log(selectedPiece, this.turn);
                 if (this.selectedPiece.piece && selectedPiece[0] != this.turn[0]){
                     this.legalMoves.forEach(move => {
                         if (move.x === this.selected.x && move.y === this.selected.y){
@@ -127,6 +130,7 @@
                     this.selectedPiece.x = -1;
                     this.selectedPiece.y = -1;
                     this.selectedPiece.piece = "";
+                    this.legalMoves=[];
                 }else{
                     //unsleceted state
                     if (selectedPiece != ""){
@@ -159,8 +163,8 @@
                 const moveList = [];
 
                 switch (this.selectedPiece.piece[1]){
-                    case 'k':{
-                        console.log('k');
+                    case 'k':{//TODO can't move into check
+                        //console.log('k');
                         for (let i = -1 ; i < 2; i ++){
                             if (i + Y < 0)continue;
                             if (i + Y > 7)break;
@@ -176,10 +180,13 @@
                             }
                             
                         }
+                        {//TODO castle
+
+                        }
                         break;
                     }
                     case 'q':{
-                        console.log('q');
+                        //console.log('q');
                         for (let i = -1; i < 2; i++){
                             for (let j = -1; j < 2; j++){
                                 if (i === 0 && j === 0) continue;
@@ -201,7 +208,7 @@
                         break;
                     }
                     case 'b':{
-                        console.log('b');
+                        //console.log('b');
                         for (let i = -1; i < 2; i+=2){
                             for (let j = -1; j < 2; j+=2){
                                 if (i === 0 && j === 0) continue;
@@ -223,8 +230,7 @@
                         break;
                     }
                     case 'n':{
-                        console.log('n');
-                        
+                        //console.log('n');
                         for (let i = 0; i < 8; i++){
                             const destX = X + knightArr[i].x;
                             const destY = Y + knightArr[i].y;
@@ -239,7 +245,7 @@
                         break;
                     }  
                     case 'r':{
-                        console.log('r');
+                        //console.log('r');
                         for (let i = -1; i < 2; i++){
                             for (let j = -1; j < 2; j++){
                                 if (i === 0 && j === 0) continue;
@@ -262,14 +268,35 @@
                         break;
                     }
                     case 'p':{
-                        console.log('p');
+                        //console.log('p');
                         let direction = (this.turn === "white") ? -1 : 1;
-                        {
+                        {//checking directly in front
                             const destX = X;
                             const destY = Y + direction;
                             const destPiece = this.getSquarePiece(destX, destY);
-                            if (!destPiece) moveList.push({x:destX, y:destY});
+                            if (!destPiece) {
+                                moveList.push({x:destX, y:destY});
+                                if ((this.turn === "white") ? (Y === 6) : (Y === 1)){
+                                    const destX2 = X;
+                                    const destY2 = destY + direction;
+                                    const destPiece2 = this.getSquarePiece(destX2, destY2);
+                                    if (!destPiece2)moveList.push({x:destX2, y:destY2});
+                                }
+                            }
                         }
+                        {//checking captures
+                            for (let i = -1; i < 2; i+=2){
+                                const destX = X + i;
+                                const destY = Y + direction;
+                                const destPiece = this.getSquarePiece(destX, destY);
+                                if (destPiece && destPiece[0] != this.turn[0])
+                                    moveList.push({x:destX, y:destY});
+                            }
+                        }
+                        {//TODO on croissant
+
+                        }
+                        //promotion handled in movePiece function
                         break;
                     }
                 }
@@ -295,7 +322,7 @@
                     }
                     if (capIndex === -1) console.log("oh no");
                     this.pieces[oppTurn][capturedPiece[1]].splice(capIndex, 1);
-                    console.log(this.pieces);
+                    //console.log(this.pieces);
                 }
 
                 //2 move the piece
@@ -315,6 +342,14 @@
                 //2c update piece in pieces list
                 pieceArr[index].x = this.selected.x;
                 pieceArr[index].y = this.selected.y;
+
+                //2d promote pawn if necessairy
+                if (pieceType === "p"){
+                    if ((this.turn === "white") ? (newY === 0) : (newY === 7)){
+                        pieceArr.splice(index, 1);
+                        this.pieces[turn]['q'].push({x:newX, y:newY});
+                    }
+                }
 
                 //3 update turn
                 this.turn = oppTurn;
