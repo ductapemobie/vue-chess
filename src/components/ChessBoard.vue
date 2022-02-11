@@ -159,7 +159,7 @@
                 const moveList = [];
 
                 switch (this.selectedPiece.piece[1]){
-                    case 'k':
+                    case 'k':{
                         console.log('k');
                         for (let i = -1 ; i < 2; i ++){
                             if (i + Y < 0)continue;
@@ -177,7 +177,8 @@
                             
                         }
                         break;
-                    case 'q':
+                    }
+                    case 'q':{
                         console.log('q');
                         for (let i = -1; i < 2; i++){
                             for (let j = -1; j < 2; j++){
@@ -198,7 +199,8 @@
                             }
                         }
                         break;
-                    case 'b':
+                    }
+                    case 'b':{
                         console.log('b');
                         for (let i = -1; i < 2; i+=2){
                             for (let j = -1; j < 2; j+=2){
@@ -219,7 +221,8 @@
                             }
                         }
                         break;
-                    case 'n':
+                    }
+                    case 'n':{
                         console.log('n');
                         
                         for (let i = 0; i < 8; i++){
@@ -234,7 +237,8 @@
                             moveList.push({x:destX, y:destY});
                         }
                         break;
-                    case 'r':
+                    }  
+                    case 'r':{
                         console.log('r');
                         for (let i = -1; i < 2; i++){
                             for (let j = -1; j < 2; j++){
@@ -256,14 +260,18 @@
                             }
                         }
                         break;
-                    case 'p':
+                    }
+                    case 'p':{
                         console.log('p');
-                            if (this.turn === "white"){
-                                console.log("w")
-                            }else{
-                                console.log("b")
-                            }
+                        let direction = (this.turn === "white") ? -1 : 1;
+                        {
+                            const destX = X;
+                            const destY = Y + direction;
+                            const destPiece = this.getSquarePiece(destX, destY);
+                            if (!destPiece) moveList.push({x:destX, y:destY});
+                        }
                         break;
+                    }
                 }
                 this.legalMoves = moveList;
             },
