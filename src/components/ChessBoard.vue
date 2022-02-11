@@ -124,7 +124,7 @@
                 if (this.selectedPiece.piece && selectedPiece[0] != this.turn[0]){
                     this.legalMoves.forEach(move => {
                         if (move.x === this.selected.x && move.y === this.selected.y){
-                            this.movePiece();
+                            this.movePiece(move);
                         }
                     });
                     this.selectedPiece.x = -1;
@@ -178,10 +178,38 @@
                                 }
                                 moveList.push({x: X + j, y: Y + i});
                             }
-                            
                         }
-                        {//TODO castle
-
+                        //castle
+                        //only 1 king ever i think, could change to be more robust though
+                        if (this.pieces[this.turn]['k'][0].canCastle){
+                            const backRow = this.turn === 'white' ? 7 : 0
+                            //left castle
+                            {
+                                this.pieces[this.turn]['r'].forEach(rook=>{
+                                    if (!rook.canCastle)return;
+                                    if (rook.x === 0 && rook.y === (backRow)){
+                                        let leftCastle = true;
+                                        for (let i = 1; i < 4; i++){
+                                            console.log(this.getSquarePiece(i, backRow))
+                                            if (this.getSquarePiece(i, backRow))leftCastle = false;
+                                        }
+                                        console.log(leftCastle);
+                                        if (leftCastle)moveList.push({x:2, y:backRow, castle:"left"})
+                                    }
+                                })
+                            }
+                            //right castle
+                            {
+                                this.pieces[this.turn]['r'].forEach(rook=>{
+                                    if (rook.x === 7 && rook.y === (this.turn === 'white' ? 7 : 0)){
+                                        let rightCastle = true;
+                                        for (let i = 5; i < 7; i++){
+                                            if (this.getSquarePiece(i, backRow))rightCastle = false;
+                                        }
+                                        if (rightCastle)moveList.push({x:6, y:backRow, castle:"right"})
+                                    }
+                                })
+                            }
                         }
                         break;
                     }
@@ -302,12 +330,13 @@
                 }
                 this.legalMoves = moveList;
             },
-            movePiece(){
+            movePiece(move){
                 //1 capture if necessairy
-                const newX = this.selected.x;
-                const newY = this.selected.y;
+                const newX = move.x;
+                const newY = move.y;
                 const turn = this.turn;
                 const oppTurn = (turn === "white") ? "black" : "white";
+                const backRow = (this.turn === 'white') ? 7 : 0;
                 const capturedPiece = this.getSquarePiece(newX, newY, this.pieces);
                 //a piece was captured
                 if (capturedPiece){
@@ -342,12 +371,34 @@
                 //2c update piece in pieces list
                 pieceArr[index].x = this.selected.x;
                 pieceArr[index].y = this.selected.y;
+                if (pieceArr[index].canCastle)pieceArr[index].canCastle = false;
 
                 //2d promote pawn if necessairy
                 if (pieceType === "p"){
                     if ((this.turn === "white") ? (newY === 0) : (newY === 7)){
                         pieceArr.splice(index, 1);
                         this.pieces[turn]['q'].push({x:newX, y:newY});
+                    }
+                }
+
+                //2e check castle case
+                if (move.castle){
+                    if (move.castle === "right"){
+                        this.pieces[turn]['r'].forEach( rook => {
+                            console.log(rook, backRow)
+                            if (rook.x === 7 && rook.y === backRow){
+                                console.log("here??")
+                                rook.canCastle = false;
+                                rook.x = 5;
+                            }
+                        })
+                    }else{//left castle
+                        this.pieces[turn]['r'].forEach( rook => {
+                            if (rook.x === 0 && rook.y === backRow){
+                                rook.canCastle = false;
+                                rook.x = 3;
+                            }
+                        })
                     }
                 }
 
