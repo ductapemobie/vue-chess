@@ -100,7 +100,7 @@
                 for (let i = 0 ; i < 8; i ++){
                     squares.push({row:i, cells:[]});
                     for (let j = 0; j < 8; j++){
-                        const squareColor = (this.selected.x === j && this.selected.y === i)?
+                        const squareColor = (this.selectedPiece.x === j && this.selectedPiece.y === i)?
                             "red" : ((i+j) % 2 === 1)? 'blue' : 'white'
                         const squarePiece = this.getSquarePiece(j, i, this.pieces);
                         squares[i].cells.push({y: i, x: j, color: squareColor, piece: squarePiece})
