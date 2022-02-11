@@ -117,7 +117,8 @@
                 this.processClick(selectedPiece);
             },
             processClick(selectedPiece){
-                if (this.selectedPiece.piece){
+                console.log(selectedPiece, this.turn);
+                if (this.selectedPiece.piece && selectedPiece[0] != this.turn[0]){
                     this.legalMoves.forEach(move => {
                         if (move.x === this.selected.x && move.y === this.selected.y){
                             this.movePiece();
@@ -257,9 +258,13 @@
                         break;
                     case 'p':
                         console.log('p');
+                            if (this.turn === "white"){
+                                console.log("w")
+                            }else{
+                                console.log("b")
+                            }
                         break;
                 }
-                console.log(moveList);
                 this.legalMoves = moveList;
             },
             movePiece(){
@@ -335,11 +340,11 @@
                     return 'wr'
                 }else if(checkType('black', 'r', this.pieces)){
                     return 'br'
-                }/*else if(checkType('white', 'p', this.pieces)){
+                }else if(checkType('white', 'p', this.pieces)){
                     return 'wp'
                 }else if(checkType('black', 'p', this.pieces)){
                     return 'bp'
-                }*/else{
+                }else{
                     return ''
                 }
             }
