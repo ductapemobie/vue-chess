@@ -90,7 +90,17 @@
                     y: -1,
                     piece: ""
                 },
-                legalMoves:[]
+                legalMoves:[],
+                boardState:[
+                    ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"],
+                    ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
+                    ["", "", "", "", "", "", "", ""],
+                    ["", "", "", "", "", "", "", ""],
+                    ["", "", "", "", "", "", "", ""],
+                    ["", "", "", "", "", "", "", ""],
+                    ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
+                    ["wr", "wn", "wb", "wq", "wk", "wb", "wn", "wr"],
+                ]
             }
         },
         computed:{
@@ -103,7 +113,7 @@
                         const squareColor = (this.selectedPiece.x === j && this.selectedPiece.y === i)?
                             "red" : ((i+j) % 2 === 1)? 'blue' : 'white'
                         
-                        const squarePiece = this.getSquarePiece(j, i, this.pieces);
+                        const squarePiece = this.boardState[i][j]//this.getSquarePiece(j, i, this.pieces);
                         squares[i].cells.push({y: i, x: j, color: squareColor, piece: squarePiece, border: false})
                     }
                 }
@@ -140,7 +150,7 @@
                             this.selectedPiece.x = this.selected.x;
                             this.selectedPiece.y = this.selected.y;
                             this.selectedPiece.piece = selectedPiece;
-                            this.determineLegalMoves();
+                            this.legalMoves = this.determineLegalMoves();
                             return;
                         }else{
                             //cant select piece off their turn
@@ -153,7 +163,7 @@
                 }
             },
             determineLegalMoves(){
-                //this is probably the biggest function
+                //this might not be the biggest function anymore
                 //only to be called in the selected state
                 if (this.selectedPiece.piece === "")return;
                 const knightArr = [{x: -2, y:-1},{x: -2, y: 1},{x: -1, y:-2},{x: -1, y: 2},{x:  1, y:-2},{x:  1, y: 2},{x:  2, y:-1},{x:  2, y: 1}];
@@ -172,7 +182,7 @@
                                 if (i === 0 && j === 0)continue;
                                 if (j + X < 0)continue;
                                 if (j + X > 7)break;
-                                const destPiece = this.getSquarePiece(X + j, Y + i);
+                                const destPiece = this.boardState[Y + i][X + j];
                                 if (destPiece){
                                     if (destPiece[0] === this.turn[0])continue;
                                 }
@@ -190,10 +200,8 @@
                                     if (rook.x === 0 && rook.y === (backRow)){
                                         let leftCastle = true;
                                         for (let i = 1; i < 4; i++){
-                                            console.log(this.getSquarePiece(i, backRow))
-                                            if (this.getSquarePiece(i, backRow))leftCastle = false;
+                                            if (this.boardState[backRow][i])leftCastle = false;
                                         }
-                                        console.log(leftCastle);
                                         if (leftCastle)moveList.push({x:2, y:backRow, castle:"left"})
                                     }
                                 })
@@ -204,7 +212,7 @@
                                     if (rook.x === 7 && rook.y === (this.turn === 'white' ? 7 : 0)){
                                         let rightCastle = true;
                                         for (let i = 5; i < 7; i++){
-                                            if (this.getSquarePiece(i, backRow))rightCastle = false;
+                                            if (this.boardState[backRow][i])rightCastle = false;
                                         }
                                         if (rightCastle)moveList.push({x:6, y:backRow, castle:"right"})
                                     }
@@ -222,7 +230,7 @@
                                     const destX = X + j * k;
                                     const destY = Y + i * k;
                                     if (destX > 7 || destX < 0 || destY > 7 || destY < 0)break;
-                                    const destPiece = this.getSquarePiece(destX, destY);
+                                    const destPiece = this.boardState[destY][destX];
                                     if (destPiece){
                                         if (destPiece[0] != this.turn[0]){
                                             moveList.push({x:destX, y:destY});
@@ -244,7 +252,7 @@
                                     const destX = X + j * k;
                                     const destY = Y + i * k;
                                     if (destX > 7 || destX < 0 || destY > 7 || destY < 0)break;
-                                    const destPiece = this.getSquarePiece(destX, destY);
+                                    const destPiece = this.boardState[destY][destX];
                                     if (destPiece){
                                         if (destPiece[0] != this.turn[0]){
                                             moveList.push({x:destX, y:destY});
@@ -263,7 +271,7 @@
                             const destX = X + knightArr[i].x;
                             const destY = Y + knightArr[i].y;
                             if (destX > 7 || destX < 0 || destY > 7 || destY < 0)continue;
-                            const destPiece = this.getSquarePiece(destX, destY);
+                            const destPiece = this.boardState[destY][destX];
                             if (destPiece){
                                 if (destPiece[0] === this.turn[0])
                                     continue;
@@ -282,7 +290,7 @@
                                     const destX = X + j * k;
                                     const destY = Y + i * k;
                                     if (destX > 7 || destX < 0 || destY > 7 || destY < 0)break;
-                                    const destPiece = this.getSquarePiece(destX, destY);
+                                    const destPiece = this.boardState[destY][destX];
                                     if (destPiece){
                                         if (destPiece[0] != this.turn[0]){
                                             moveList.push({x:destX, y:destY});
@@ -301,13 +309,13 @@
                         {//checking directly in front
                             const destX = X;
                             const destY = Y + direction;
-                            const destPiece = this.getSquarePiece(destX, destY);
+                            const destPiece = this.boardState[destY][destX];
                             if (!destPiece) {
                                 moveList.push({x:destX, y:destY});
                                 if ((this.turn === "white") ? (Y === 6) : (Y === 1)){
                                     const destX2 = X;
                                     const destY2 = destY + direction;
-                                    const destPiece2 = this.getSquarePiece(destX2, destY2);
+                                    const destPiece2 = this.boardState[destY2][destX2];
                                     if (!destPiece2)moveList.push({x:destX2, y:destY2});
                                 }
                             }
@@ -316,7 +324,7 @@
                             for (let i = -1; i < 2; i+=2){
                                 const destX = X + i;
                                 const destY = Y + direction;
-                                const destPiece = this.getSquarePiece(destX, destY);
+                                const destPiece = this.boardState[destY][destX];
                                 if (destPiece && destPiece[0] != this.turn[0])
                                     moveList.push({x:destX, y:destY});
                             }
@@ -328,16 +336,18 @@
                         break;
                     }
                 }
-                this.legalMoves = moveList;
+                return moveList;
             },
             movePiece(move){
                 //1 capture if necessairy
+                const X = this.selectedPiece.x;
+                const Y = this.selectedPiece.y;
                 const newX = move.x;
                 const newY = move.y;
                 const turn = this.turn;
                 const oppTurn = (turn === "white") ? "black" : "white";
                 const backRow = (this.turn === 'white') ? 7 : 0;
-                const capturedPiece = this.getSquarePiece(newX, newY, this.pieces);
+                const capturedPiece = this.boardState[newY][newX];
                 //a piece was captured
                 if (capturedPiece){
                     const capPieceArr = this.pieces[oppTurn][capturedPiece[1]];
@@ -373,7 +383,11 @@
                 pieceArr[index].y = this.selected.y;
                 if (pieceArr[index].canCastle)pieceArr[index].canCastle = false;
 
-                //2d promote pawn if necessairy
+                //2d update boardstate
+                this.boardState[newY][newX] =  this.selectedPiece.piece;
+                this.boardState[Y][X] = "";
+
+                //2e promote pawn if necessairy
                 if (pieceType === "p"){
                     if ((this.turn === "white") ? (newY === 0) : (newY === 7)){
                         pieceArr.splice(index, 1);
@@ -381,22 +395,25 @@
                     }
                 }
 
-                //2e check castle case
+                //2f check castle case
                 if (move.castle){
                     if (move.castle === "right"){
                         this.pieces[turn]['r'].forEach( rook => {
                             console.log(rook, backRow)
                             if (rook.x === 7 && rook.y === backRow){
-                                console.log("here??")
-                                rook.canCastle = false;
                                 rook.x = 5;
+                                rook.canCastle = false;
+                                this.boardState[backRow][7] = "";
+                                this.boardState[backRow][5] = turn[0] + 'r'
                             }
                         })
                     }else{//left castle
                         this.pieces[turn]['r'].forEach( rook => {
                             if (rook.x === 0 && rook.y === backRow){
-                                rook.canCastle = false;
                                 rook.x = 3;
+                                rook.canCastle = false;
+                                this.boardState[backRow][0] = "";
+                                this.boardState[backRow][3] = turn[0] + 'r'
                             }
                         })
                     }
@@ -405,42 +422,24 @@
                 //3 update turn
                 this.turn = oppTurn;
             },
-            getSquarePiece(x, y){
-                function checkType(color, piece, pieces){
-                    for (let i = 0; i < pieces[color][piece].length; i++)
-                        if (pieces[color][piece][i].x === x && pieces[color][piece][i].y === y){
-                            return true;
-                        }
-                    return false;
-                }
+            determineCheck(){
+                //called to filter legalMoves to make sure u dont put urself in check
+                /*
+                const turn = this.turn;
+                const oppTurn = (turn === 'white') ? 'black' : 'white';
+                const X = this.selectedPiece.x;
+                const Y = this.selectedPiece.y;
+                const direction = (turn === 'white') ? -1 : 1;
 
-                if (checkType('white', 'k', this.pieces)){
-                    return 'wk';
-                }else if(checkType('black', 'k', this.pieces)){
-                    return 'bk';
-                }else if(checkType('white', 'q', this.pieces)){
-                    return 'wq'
-                }else if(checkType('black', 'q', this.pieces)){
-                    return 'bq'
-                }else if(checkType('white', 'b', this.pieces)){
-                    return 'wb'
-                }else if(checkType('black', 'b', this.pieces)){
-                    return 'bb'
-                }else if(checkType('white', 'n', this.pieces)){
-                    return 'wn'
-                }else if(checkType('black', 'n', this.pieces)){
-                    return 'bn'
-                }else if(checkType('white', 'r', this.pieces)){
-                    return 'wr'
-                }else if(checkType('black', 'r', this.pieces)){
-                    return 'br'
-                }else if(checkType('white', 'p', this.pieces)){
-                    return 'wp'
-                }else if(checkType('black', 'p', this.pieces)){
-                    return 'bp'
-                }else{
-                    return ''
-                }
+                this.legalMoves.filter(move => {
+                    //move holds {x, y} of possible dest square
+
+                    this.pieces[oppTurn]['p'].forEach((pawn) => {
+                        
+                    })
+
+                })
+                */
             }
         }
     }
