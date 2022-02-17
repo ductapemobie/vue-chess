@@ -150,7 +150,8 @@
                             this.selectedPiece.x = this.selected.x;
                             this.selectedPiece.y = this.selected.y;
                             this.selectedPiece.piece = selectedPiece;
-                            this.legalMoves = this.determineLegalMoves();
+                             const possibleMoves = this.determineLegalMoves();
+                             this.legalMoves = this.determineCheck(possibleMoves);
                             return;
                         }else{
                             //cant select piece off their turn
@@ -422,24 +423,93 @@
                 //3 update turn
                 this.turn = oppTurn;
             },
-            determineCheck(){
+            determineCheck(possibleMoves){
                 //called to filter legalMoves to make sure u dont put urself in check
-                /*
+                
                 const turn = this.turn;
                 const oppTurn = (turn === 'white') ? 'black' : 'white';
                 const X = this.selectedPiece.x;
                 const Y = this.selectedPiece.y;
-                const direction = (turn === 'white') ? -1 : 1;
+                const oppDirection = (turn === 'white') ? 1 : -1;
+                const piece = this.selectedPiece.piece;
+                let kingSquare = this.pieces[turn]['k'];
+                
+                const copiedState = this.boardState.map(row=>row.map(cell => cell));
+                console.log(copiedState);
 
-                this.legalMoves.filter(move => {
+                console.log(X, Y, oppDirection);
+                
+                possibleMoves.filter(move => {
+
                     //move holds {x, y} of possible dest square
+                    const takenPiece = copiedState[move.y][move.x]
+                    copiedState[move.y][move.x] = piece;
+                    copiedState[Y][X] = "";
+                    let inCheck = false;
+                    
 
-                    this.pieces[oppTurn]['p'].forEach((pawn) => {
+                    if (piece[1] === 'k'){
+                        kingSquare = move;
+                    }
+
+                    console.log("Move: ", move);
+                    console.log("king square", kingSquare);
+                    console.log(copiedState);
+                    for(let i = 0; i < 8; i++)console.log(copiedState[i]);
+                    console.log(copiedState[4]);
+                    console.log(move.y, move.x);
+
+                    if (piece[1] === 'k'){
+                        //unblockable pieces (pawn knight & king)
+                        //dont need to check if a non king piece moving puts the king in check here
+                        this.pieces[oppTurn]['p'].forEach((pawn) => {
+                            if (
+                                (pawn.x + 1 === kingSquare.x || pawn.x - 1 === kingSquare.x) &&
+                                (pawn.y === kingSquare.y)
+                            ){
+                                
+                                inCheck = true;
+                                return;
+                            }
+                        })
+                        if (inCheck)return false;
+
+                        const knightArr = [
+                            {x: -2, y:-1},{x: -2, y: 1},
+                            {x: -1, y:-2},{x: -1, y: 2},
+                            {x:  1, y:-2},{x:  1, y: 2},
+                            {x:  2, y:-1},{x:  2, y: 1}
+                        ];
+
+                        this.pieces[oppTurn]['n'].forEach((knight) => {
+                            if (
+                                knightArr.reduce((status, move) => {
+                                    const moveCoords = {
+                                        x: knight.x + move.x,
+                                        y: knight.y + move.y
+                                    }
+
+                                    if (
+                                        (moveCoords.x === kingSquare.x) && (moveCoords.y === kingSquare.y)
+                                    ){
+                                        return false;
+                                    }
+                                    return status;
+                                }, false)
+                            ){
+                                inCheck = true;
+                                return;
+                            }
+                        });
+                        if (inCheck)return false;
                         
-                    })
+                    }
+
+                    copiedState[Y][X] = piece;
+                    copiedState[move.y][move.x] = takenPiece;
 
                 })
-                */
+                return possibleMoves;
             }
         }
     }
