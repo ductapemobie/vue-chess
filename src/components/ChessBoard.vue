@@ -1,4 +1,5 @@
 <template>
+    <div>
     <div class="chess-grid">
         <div v-for="row in initialBoard" :key="row" class="chess-row">
             <div v-for="square in row.cells" :key="square" class="chess-square">
@@ -6,15 +7,19 @@
             </div>
         </div>
     </div>
+    <MovesTable :moves="moveHistory"/>
+    </div>
 </template>
 
 <script>
     import ChessSquare from "./ChessSquare.vue"
+    import MovesTable from "./MovesTable.vue"
 
     export default {
         name: 'ChessBoard',
         components:{
-            ChessSquare
+            ChessSquare,
+            MovesTable
         },
         data(){
             return {
@@ -100,7 +105,8 @@
                     ["", "", "", "", "", "", "", ""],
                     ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
                     ["wr", "wn", "wb", "wq", "wk", "wb", "wn", "wr"],
-                ]
+                ],
+                moveHistory:[]
             }
         },
         computed:{
@@ -349,6 +355,14 @@
                 const oppTurn = (turn === "white") ? "black" : "white";
                 const backRow = (this.turn === 'white') ? 7 : 0;
                 const capturedPiece = this.boardState[newY][newX];
+                //will need to add some goofy stuff to this for en passant promotion and castles
+                const moveObj = {
+                    captured: capturedPiece,
+                    piece: this.selectedPiece.piece,
+                    start: {x : X, y : Y},
+                    end: {x : newX, y : newY}
+                };
+                this.moveHistory.push(moveObj);
                 //a piece was captured
                 if (capturedPiece){
                     const capPieceArr = this.pieces[oppTurn][capturedPiece[1]];
@@ -385,7 +399,7 @@
                 if (pieceArr[index].canCastle)pieceArr[index].canCastle = false;
 
                 //2d update boardstate
-                this.boardState[newY][newX] =  this.selectedPiece.piece;
+                this.boardState[newY][newX] = this.selectedPiece.piece;
                 this.boardState[Y][X] = "";
 
                 //2e promote pawn if necessairy
@@ -393,6 +407,7 @@
                     if ((this.turn === "white") ? (newY === 0) : (newY === 7)){
                         pieceArr.splice(index, 1);
                         this.pieces[turn]['q'].push({x:newX, y:newY});
+                        this.boardState[newY][newX] = turn[0] + 'q' 
                     }
                 }
 
