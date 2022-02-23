@@ -7,6 +7,7 @@
             </div>
         </div>
     </div>
+    <button v-on:click="undoMove">undo</button>
     <MovesTable :moves="moveHistory"/>
     </div>
 </template>
@@ -362,7 +363,6 @@
                     start: {x : X, y : Y},
                     end: {x : newX, y : newY}
                 };
-                this.moveHistory.push(moveObj);
                 //a piece was captured
                 if (capturedPiece){
                     const capPieceArr = this.pieces[oppTurn][capturedPiece[1]];
@@ -414,6 +414,7 @@
                 //2f check castle case
                 if (move.castle){
                     if (move.castle === "right"){
+                        moveObj.castle = 'right';
                         this.pieces[turn]['r'].forEach( rook => {
                             if (rook.x === 7 && rook.y === backRow){
                                 rook.x = 5;
@@ -423,6 +424,7 @@
                             }
                         })
                     }else{//left castle
+                        moveObj.castle = 'left';
                         this.pieces[turn]['r'].forEach( rook => {
                             if (rook.x === 0 && rook.y === backRow){
                                 rook.x = 3;
@@ -436,6 +438,9 @@
 
                 //3 update turn
                 this.turn = oppTurn;
+                
+                //4 add move to move history
+                this.moveHistory.push(moveObj);
             },
             determineCheck(possibleMoves){
                 //called to filter legalMoves to make sure u dont put urself in check
@@ -628,6 +633,26 @@
                     return (inCheck === false);
 
                 })
+            },
+            undoMove(){
+                if (this.moveHistory.length === 0)return;
+                const oppTurn = this.turn === 'white' ? 'black' : 'white';
+                const move = this.moveHistory[this.moveHistory.length - 1];
+
+                this.boardState[move.start.y][move.start.x] = move.piece;
+                this.boardState[move.end.y][move.end.x] = move.captured;
+
+                const pieceReference = this.pieces[oppTurn][move.piece[1]].filter(piece => (piece.x === move.end.x) && (piece.y === move.end.y))[0];
+                pieceReference.x = move.start.x;
+                pieceReference.y = move.start.y;
+
+                if (move.captured){
+                    this.pieces[this.turn][move.captured[1]].push({x:move.end.x, y:move.end.y});
+                }
+
+                this.turn = oppTurn;
+                this.moveHistory.splice(this.moveHistory.length - 1, 1);
+
             }
         }
     }
