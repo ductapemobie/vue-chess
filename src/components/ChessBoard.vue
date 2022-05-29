@@ -1,4 +1,5 @@
 <template>
+    <div>
     <div class="chess-grid">
         <div v-for="row in initialBoard" :key="row" class="chess-row">
             <div v-for="square in row.cells" :key="square" class="chess-square">
@@ -6,15 +7,20 @@
             </div>
         </div>
     </div>
+    <button v-on:click="undoMove">undo</button>
+    <MovesTable :moves="moveHistory"/>
+    </div>
 </template>
 
 <script>
     import ChessSquare from "./ChessSquare.vue"
+    import MovesTable from "./MovesTable.vue"
 
     export default {
         name: 'ChessBoard',
         components:{
-            ChessSquare
+            ChessSquare,
+            MovesTable
         },
         data(){
             return {
@@ -100,7 +106,8 @@
                     ["", "", "", "", "", "", "", ""],
                     ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
                     ["wr", "wn", "wb", "wq", "wk", "wb", "wn", "wr"],
-                ]
+                ],
+                moveHistory:[]
             }
         },
         computed:{
@@ -349,6 +356,13 @@
                 const oppTurn = (turn === "white") ? "black" : "white";
                 const backRow = (this.turn === 'white') ? 7 : 0;
                 const capturedPiece = this.boardState[newY][newX];
+                //will need to add some goofy stuff to this for en passant promotion and castles
+                const moveObj = {
+                    captured: capturedPiece,
+                    piece: this.selectedPiece.piece,
+                    start: {x : X, y : Y},
+                    end: {x : newX, y : newY}
+                };
                 //a piece was captured
                 if (capturedPiece){
                     const capPieceArr = this.pieces[oppTurn][capturedPiece[1]];
@@ -385,7 +399,7 @@
                 if (pieceArr[index].canCastle)pieceArr[index].canCastle = false;
 
                 //2d update boardstate
-                this.boardState[newY][newX] =  this.selectedPiece.piece;
+                this.boardState[newY][newX] = this.selectedPiece.piece;
                 this.boardState[Y][X] = "";
 
                 //2e promote pawn if necessairy
@@ -393,14 +407,15 @@
                     if ((this.turn === "white") ? (newY === 0) : (newY === 7)){
                         pieceArr.splice(index, 1);
                         this.pieces[turn]['q'].push({x:newX, y:newY});
+                        this.boardState[newY][newX] = turn[0] + 'q' 
                     }
                 }
 
                 //2f check castle case
                 if (move.castle){
                     if (move.castle === "right"){
+                        moveObj.castle = 'right';
                         this.pieces[turn]['r'].forEach( rook => {
-                            console.log(rook, backRow)
                             if (rook.x === 7 && rook.y === backRow){
                                 rook.x = 5;
                                 rook.canCastle = false;
@@ -409,6 +424,7 @@
                             }
                         })
                     }else{//left castle
+                        moveObj.castle = 'left';
                         this.pieces[turn]['r'].forEach( rook => {
                             if (rook.x === 0 && rook.y === backRow){
                                 rook.x = 3;
@@ -422,6 +438,9 @@
 
                 //3 update turn
                 this.turn = oppTurn;
+                
+                //4 add move to move history
+                this.moveHistory.push(moveObj);
             },
             determineCheck(possibleMoves){
                 //called to filter legalMoves to make sure u dont put urself in check
@@ -432,15 +451,10 @@
                 const Y = this.selectedPiece.y;
                 const oppDirection = (turn === 'white') ? 1 : -1;
                 const piece = this.selectedPiece.piece;
-                let kingSquare = this.pieces[turn]['k'];
-                
+                let kingSquare = this.pieces[turn]['k'][0];
                 const copiedState = this.boardState.map(row=>row.map(cell => cell));
-                console.log(copiedState);
 
-                console.log(X, Y, oppDirection);
-                
-                possibleMoves.filter(move => {
-
+                return possibleMoves.filter(move => {
                     //move holds {x, y} of possible dest square
                     const takenPiece = copiedState[move.y][move.x]
                     copiedState[move.y][move.x] = piece;
@@ -452,28 +466,35 @@
                         kingSquare = move;
                     }
 
-                    console.log("Move: ", move);
-                    console.log("king square", kingSquare);
-                    console.log(copiedState);
-                    for(let i = 0; i < 8; i++)console.log(copiedState[i]);
-                    console.log(copiedState[4]);
-                    console.log(move.y, move.x);
+                    const boardPieces = {};
 
-                    if (piece[1] === 'k'){
-                        //unblockable pieces (pawn knight & king)
-                        //dont need to check if a non king piece moving puts the king in check here
-                        this.pieces[oppTurn]['p'].forEach((pawn) => {
+                    for (let i = 0; i < 8; i++){
+                        for (let j = 0; j < 8; j ++){
+                            const piece = copiedState[i][j];
+                            if (piece){
+                                if (piece[0] === oppTurn[0]){
+                                    if (!boardPieces[piece[1]]){
+                                        boardPieces[piece[1]] = [];
+                                    }
+                                    boardPieces[piece[1]].push({x: j, y: i});
+                                }
+                            }
+                        }
+                    }
+
+                    if (boardPieces['p']){
+                        boardPieces['p'].forEach((pawn) => {
                             if (
                                 (pawn.x + 1 === kingSquare.x || pawn.x - 1 === kingSquare.x) &&
-                                (pawn.y === kingSquare.y)
+                                (pawn.y + oppDirection === kingSquare.y)
                             ){
-                                
                                 inCheck = true;
                                 return;
                             }
                         })
-                        if (inCheck)return false;
+                    }
 
+                    if (boardPieces['n']){
                         const knightArr = [
                             {x: -2, y:-1},{x: -2, y: 1},
                             {x: -1, y:-2},{x: -1, y: 2},
@@ -481,7 +502,7 @@
                             {x:  2, y:-1},{x:  2, y: 1}
                         ];
 
-                        this.pieces[oppTurn]['n'].forEach((knight) => {
+                        boardPieces['n'].forEach((knight) => {
                             if (
                                 knightArr.reduce((status, move) => {
                                     const moveCoords = {
@@ -492,7 +513,7 @@
                                     if (
                                         (moveCoords.x === kingSquare.x) && (moveCoords.y === kingSquare.y)
                                     ){
-                                        return false;
+                                        return true;
                                     }
                                     return status;
                                 }, false)
@@ -501,15 +522,137 @@
                                 return;
                             }
                         });
-                        if (inCheck)return false;
+                    }
+
+                    if (boardPieces['k']){
+                        const kingArr = [
+                            {x: -1, y: -1},{x: -1, y:  0},{x: -1, y:  1},
+                            {x:  0, y: -1},{x:  0, y:  1},
+                            {x:  1, y: -1},{x:  1, y:  0},{x:  1, y:  1}
+                        ]
                         
+                        boardPieces['k'].forEach((king) => {
+                            if (
+                                kingArr.reduce((status, move) => {
+                                    const moveCoords = {
+                                        x: king.x + move.x,
+                                        y: king.y + move.y
+                                    }
+                                    if (
+                                        (moveCoords.x === kingSquare.x) && (moveCoords.y === kingSquare.y)
+                                    ){
+                                        return true;
+                                    }
+                                    return status;
+                                }, false)
+                            ){
+                                inCheck = true;
+                                return;
+                            }
+                        })
+                    }
+
+                    if (boardPieces['q']){
+                        boardPieces['q'].forEach(queen => {
+                            for (let i = -1; i < 2; i++){
+                                for (let j = -1; j < 2; j++){
+                                    if (i === 0 && j === 0)continue;
+                                    for (let k = 1; k < 8; k++){
+                                        const moveCoords = {
+                                            x: queen.x + j * k,
+                                            y: queen.y + i * k
+                                        }
+                                        if (moveCoords.x < 0 || moveCoords.x > 7 || moveCoords.y < 0 || moveCoords.y > 7)break;
+                                        const pieceAtMove = copiedState[moveCoords.y][moveCoords.x];
+                                        if (pieceAtMove){
+                                            if (moveCoords.x === kingSquare.x && moveCoords.y === kingSquare.y){
+                                                inCheck = true;
+                                                return;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        })
+                    }
+
+                    if (boardPieces['b']){
+                        boardPieces['b'].forEach(bishop => {
+                            for (let i = -1; i < 2; i+=2){
+                                for (let j = -1; j < 2; j+=2){
+                                    if (i === 0 && j === 0)continue;
+                                    for (let k = 1; k < 8; k++){
+                                        const moveCoords = {
+                                            x: bishop.x + j * k,
+                                            y: bishop.y + i * k
+                                        }
+                                        if (moveCoords.x < 0 || moveCoords.x > 7 || moveCoords.y < 0 || moveCoords.y > 7)break;
+                                        const pieceAtMove = copiedState[moveCoords.y][moveCoords.x];
+                                        if (pieceAtMove){
+                                            if (moveCoords.x === kingSquare.x && moveCoords.y === kingSquare.y){
+                                                inCheck = true;
+                                                return;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    if (boardPieces['r']){
+                        boardPieces['r'].forEach(rook => {
+                            for (let i = -1; i < 2; i++){
+                                for (let j = -1; j < 2; j++){
+                                    if (i === 0 && j === 0)continue;
+                                    if (i != 0 && j != 0)continue;
+                                    for (let k = 1; k < 8; k++){
+                                        const moveCoords = {
+                                            x: rook.x + j * k,
+                                            y: rook.y + i * k
+                                        }
+                                        if (moveCoords.x < 0 || moveCoords.x > 7 || moveCoords.y < 0 || moveCoords.y > 7)break;
+                                        const pieceAtMove = copiedState[moveCoords.y][moveCoords.x];
+                                        if (pieceAtMove){
+                                            if (moveCoords.x === kingSquare.x && moveCoords.y === kingSquare.y){
+                                                inCheck = true;
+                                                return;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        })
                     }
 
                     copiedState[Y][X] = piece;
                     copiedState[move.y][move.x] = takenPiece;
+                    return (inCheck === false);
 
                 })
-                return possibleMoves;
+            },
+            undoMove(){
+                if (this.moveHistory.length === 0)return;
+                const oppTurn = this.turn === 'white' ? 'black' : 'white';
+                const move = this.moveHistory[this.moveHistory.length - 1];
+
+                this.boardState[move.start.y][move.start.x] = move.piece;
+                this.boardState[move.end.y][move.end.x] = move.captured;
+
+                const pieceReference = this.pieces[oppTurn][move.piece[1]].filter(piece => (piece.x === move.end.x) && (piece.y === move.end.y))[0];
+                pieceReference.x = move.start.x;
+                pieceReference.y = move.start.y;
+
+                if (move.captured){
+                    this.pieces[this.turn][move.captured[1]].push({x:move.end.x, y:move.end.y});
+                }
+
+                this.turn = oppTurn;
+                this.moveHistory.splice(this.moveHistory.length - 1, 1);
+
             }
         }
     }
